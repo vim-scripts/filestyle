@@ -1,0 +1,88 @@
+*filestyle.txt* Plugin checking text to correspond current Vim settings
+
+===============================================================================
+CONTENTS                                                    *FileStyleContents*
+
+    1. Istallation ................................. |FileStyleInstallation|
+    2. Usage ....................................... |FileStyleUsage|
+    3. License ..................................... |FileStyleLicense|
+    4. Contribution ................................ |FileStyleContribution|
+    5. Changelog ................................... |FileStyleChangelog|
+    6. Credits ..................................... |FileStyleCredits|
+
+
+===============================================================================
+Section 1: Installation                                 *FileStyleInstallation*
+
+    Installation with Pathogen (recommended):
+
+        $ cd ~/.vim/bundle
+        $ git clone https://github.com/aserebryakov/filestyle.git
+
+    If you do not use Pathogen, clone repository and copy the content to
+    your '~/.vim/' directory.
+
+===============================================================================
+Section 2: Usage                                               *FileStyleUsage*
+
+    Plugin is loaded automatically and checks each opened file to correspond
+    Vim settings.
+
+    Current functionality:
+    1. If |expandtab| option is used, then all '\t' characters are highlighted
+       (RED), otherwise spaces in begining of the line are highlighted (YELLOW)
+    2. Trailing spaces are highlighted (CYAN)
+    3. Line parts, that are longer than vaule of |textwidth| (if it was set)
+       are highlighed (INVERT)
+
+    Commands:
+        FileStyleActivate   - enable plugin for current buffer
+        FileStyleDeactivate - disable plugin for current buffer
+        FileStyleCheck      - check current buffer
+
+
+===============================================================================
+Section 3: License                                           *FileStyleLicense*
+
+    Copyright 2014 Alexander Serebryakov
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+
+===============================================================================
+Section 4: Contribution                                 *FileStyleContribution*
+
+    Plugin source is available on GitHub by the link:
+
+        https://github.com/aserebryakov/filestyle
+
+    If you want to improve this plugin, just fork the repository.
+
+
+===============================================================================
+Section 5: Changelog                                       *FileStyleChangelog*
+
+    Version 0.5.0   Implemented basic functionality:
+                    * Highlighting of trailing spaces
+                    * Highlighting of incorrect indentation
+
+    Version 0.5.1   * Added commands to enable/disable plugin
+                    * Several bug fixes
+                    * Added separated highlighting for different cases
+
+===============================================================================
+Section 6: Credits                                           *FileStyleCredits*
+
+    Author: Alexander Serebryakov
+    GitHub: https://github.com/aserebryakov
+
