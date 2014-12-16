@@ -28,12 +28,18 @@ Current functionality:
 2. Trailing spaces are highlighted (CYAN)
 3. Line parts, that are longer than vaule of `textwidth` (if it was set)
    are highlighed (INVERT)
+4. Control characters are highlighted (BLUE)
 
 Commands:
 
   * `FileStyleActivate`   - enable plugin for current buffer
   * `FileStyleDeactivate` - disable plugin for current buffer
   * `FileStyleCheck`      - check current buffer
+
+In order to configure file types to be ingored by a plugin, add the
+following line to your `.vimrc` file:
+
+    let g:filestyle_ignore = ['text']
 
 
 Contribution
@@ -64,3 +70,8 @@ Changelog
 
 * Fixed the `undefined variable filestyle_active` error
 
+0.6.0
+
+* Configurable list of ignored file types
+* Plugin turns off in all windows with current buffer opened
+* Added highlighting of control characters

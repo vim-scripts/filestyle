@@ -16,17 +16,25 @@
 
 if !exists('g:filestyle_plugin')
   let g:filestyle_plugin = 1
+  let g:filestyle_ignore_default = ['help', 'nerdtree']
+
+  if !exists('g:filestyle_ignore')
+    let g:filestyle_ignore = g:filestyle_ignore_default
+  else
+    let g:filestyle_ignore += g:filestyle_ignore_default
+  endif
 
   highligh FileStyleTabsError ctermbg=Red guibg=Red
   highligh FileStyleTrailngSpacesError ctermbg=Cyan guibg=Cyan
   highligh FileStyleSpacesError ctermbg=Yellow guibg=Yellow
+  highligh FileStyleControlCharacter ctermbg=Blue guibg=Blue
   highligh FileStyleTooLongLine cterm=inverse gui=inverse
 
   "Defining auto commands
   augroup filestyle_auto_commands
     autocmd!
-    autocmd BufReadPost,BufNewFile * call FileStyleActivate()
     autocmd FileType * call FileStyleCheckFiletype()
+    autocmd BufReadPost,BufNew,VimEnter * call FileStyleActivate()
     autocmd WinEnter * call FileStyleCheck()
   augroup end
 
@@ -38,24 +46,37 @@ if !exists('g:filestyle_plugin')
 endif
 
 
-"Turn plugin on
+"Turn plugin on for a current buffer
 function FileStyleActivate()
   let b:filestyle_active = 1
+  call FileStyleCheckFiletype()
   call FileStyleCheck()
 endfunction
 
 
-"Turn plugin off
+"Turn plugin off for a current buffer
 function FileStyleDeactivate()
   let b:filestyle_active = 0
-  call clearmatches()
+  let l:filename = expand('%:p')
+  windo call FileStyleClearFile(l:filename)
+
+  "Moving to the first window after windo
+  wincmd w
+endfunction
+
+
+"Clear matches if name of the file is the same as given
+function FileStyleClearFile(filename)
+  if a:filename == expand('%:p')
+    call clearmatches()
+  endif
 endfunction
 
 
 "Check filetype to handle specific cases
 function FileStyleCheckFiletype()
-  "Avoid checking of help files
-  if &filetype=='help'
+  "Disable checking of the files in black list
+  if index(g:filestyle_ignore, &filetype) != -1
     call FileStyleDeactivate()
   endif
 endfunction
@@ -98,6 +119,14 @@ function FileStyleLongLines()
 endfunction
 
 
+"Checking control characters
+function FileStyleControlCharacters()
+  let l:highlight = {'highlight' : 'FileStyleControlCharacter',
+                     \ 'pattern': '[\x00-\x08\x0a-\x1f]'}
+  call FileStyleHighlightPattern(l:highlight)
+endfunction
+
+
 "Checking file dependenly on settings
 function FileStyleCheck()
   if get(b:, 'filestyle_active', 0) == 1
@@ -105,6 +134,7 @@ function FileStyleCheck()
     call FileStyleExpandtabCheck()
     call FileStyleTrailingSpaces()
     call FileStyleLongLines()
+    call FileStyleControlCharacters()
   endif
 endfunction
 
