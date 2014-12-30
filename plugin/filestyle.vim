@@ -16,6 +16,7 @@
 
 if !exists('g:filestyle_plugin')
   let g:filestyle_plugin = 1
+  let g:filestyle_enabled = 1
   let g:filestyle_ignore_default = ['help', 'nerdtree']
 
   if !exists('g:filestyle_ignore')
@@ -33,15 +34,17 @@ if !exists('g:filestyle_plugin')
   "Defining auto commands
   augroup filestyle_auto_commands
     autocmd!
-    autocmd FileType * call FileStyleCheckFiletype()
-    autocmd BufReadPost,BufNew,VimEnter * call FileStyleActivate()
+    autocmd BufReadPost,VimEnter,FileType * call FileStyleActivate()
     autocmd WinEnter * call FileStyleCheck()
   augroup end
 
   "Defining plugin commands
+  command! FileStyleEnable call FileStyleEnable()
+  command! FileStyleDisable call FileStyleDisable()
   command! FileStyleActivate call FileStyleActivate()
   command! FileStyleDeactivate call FileStyleDeactivate()
   command! FileStyleCheck call FileStyleCheck()
+  command! FileStyleFix call FileStyleFix()
 
 endif
 
@@ -95,7 +98,7 @@ function! FileStyleExpandtabCheck()
                      \ 'pattern': '\t\+'}
   else
     let l:highlight = {'highlight' : 'FileStyleSpacesError',
-                     \ 'pattern': '^\t* \+'}
+                     \ 'pattern' : '^\t* \+'}
   endif
   call FileStyleHighlightPattern(l:highlight)
 endfunction!
@@ -113,7 +116,7 @@ endfunction!
 function! FileStyleLongLines()
   if &textwidth > 0
     let l:highlight = {'highlight' : 'FileStyleTooLongLine',
-                     \ 'pattern': '\%' . (&textwidth+1) . 'v.*' }
+                     \ 'pattern': '\%>' . &textwidth . 'v.\+' }
     call FileStyleHighlightPattern(l:highlight)
   endif
 endfunction!
@@ -122,19 +125,107 @@ endfunction!
 "Checking control characters
 function! FileStyleControlCharacters()
   let l:highlight = {'highlight' : 'FileStyleControlCharacter',
-                     \ 'pattern': '[\x00-\x08\x0a-\x1f]'}
+                   \ 'pattern': '[\x00-\x08\x0a-\x1f]'}
   call FileStyleHighlightPattern(l:highlight)
 endfunction!
 
 
 "Checking file dependenly on settings
 function! FileStyleCheck()
-  if get(b:, 'filestyle_active', 0) == 1
-    call clearmatches()
-    call FileStyleExpandtabCheck()
-    call FileStyleTrailingSpaces()
-    call FileStyleLongLines()
-    call FileStyleControlCharacters()
+  if get(g:, 'filestyle_enabled', 0) == 0
+    return
+  endif
+
+  if get(b:, 'filestyle_active', 0) == 0
+    return
+  endif
+
+  call clearmatches()
+  call FileStyleExpandtabCheck()
+  call FileStyleTrailingSpaces()
+  call FileStyleLongLines()
+  call FileStyleControlCharacters()
+endfunction!
+
+
+"Remove trailing spaces
+function! FileStyleTrailngSpacesFix()
+  silent! execute '%s/\s\+$//'
+endfunction!
+
+
+"Function iterating over entire buffer and processing each
+"line with a given function
+function! FileStyleDoForEachLine(function)
+  for l:i in range(line('$'))
+    let l:line = getline(l:i)
+    let l:result_line = call(a:function, [l:line])
+    call setline(l:i, l:result_line)
+  endfor
+endfunction!
+
+
+"Function replacing spaces with tabs
+function! FileStyleFixIndent(line)
+  let l:indent_len = 0
+  for l:i in range(strlen(a:line))
+    if a:line[l:i] == " "
+      let l:indent_len += 1
+    elseif a:line[l:i] == "\t"
+      let l:indent_len = (l:indent_len/&tabstop + 1)*&tabstop
+    else
+      break
+    endif
+  endfor
+
+  let l:indent_tabs = l:indent_len/&tabstop
+  let l:indent_string = ""
+
+  for l:i in range(l:indent_tabs)
+    let l:indent_string .= "\t"
+  endfor
+
+  return (l:indent_string . substitute(a:line, '^\s\+', '', ''))
+endfunction!
+
+
+"Fix indentations
+function! FileStyleExpandtabFix()
+  if &expandtab
+    %retab
+  else
+    "Command retab! is not used because it may replace
+    "correct spaces with tabs
+    call FileStyleDoForEachLine('FileStyleFixIndent')
   endif
 endfunction!
 
+
+"Remove control characters
+function! FileStyleControlCharactersFix()
+  silent! execute '%s/[\x00-\x08\x0a-\x1f]//g'
+endfunction!
+
+
+"Fix filestyle errors
+function! FileStyleFix()
+  call FileStyleControlCharactersFix()
+  call FileStyleTrailngSpacesFix()
+  call FileStyleExpandtabFix()
+endfunction!
+
+
+"Enable plugin globally
+function! FileStyleEnable()
+  let g:filestyle_enabled = 1
+  windo call FileStyleActivate()
+  wincmd w
+endfunction!
+
+
+"Disable plugin globally
+function! FileStyleDisable()
+  let g:filestyle_enabled = 0
+  windo call clearmatches()
+  wincmd w
+endfunction!
