@@ -1,12 +1,11 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=5065
 
 Usage
----------
+-----
 
-Plugin is loaded automatically and checks each opened file to correspond
-Vim settings.
+**filestyle** automatically checks each opened file.
 
-Commands:
+##### Commands
 
   * `FileStyleEnable`     - enable plugin globally
   * `FileStyleDisable`    - disable plugin globally
@@ -15,35 +14,32 @@ Commands:
   * `FileStyleCheck`      - check current buffer
   * `FileStyleFix`        - fix style errors
 
-Highlighting rules:
+##### Highlighting rules
 
-1. If |expandtab| option is used, then all '\t' characters are highlighted
-   (RED), otherwise spaces in begining of the line are highlighted (YELLOW)
-2. Trailing spaces are highlighted (CYAN)
-3. Line parts, that are longer than vaule of |textwidth| (if it was set)
-   are highlighed (INVERT)
-4. Control characters are highlighted (BLUE)
+1. If `|expandtab|` is set, highlight tabs (RED), if not, highlight spaces at
+the beginning of a line (YELLOW).
+1. Highlight trailing spaces (CYAN)
+1. Highlight line parts that exceed `|textwidth|` (INVERT)
+1. Highlight control characters (BLUE)
 
-FileStyleFix rules:
+##### FileStyleFix rules
 
-1. Control characters are removed
-2. Trailing spaces are removed
-3. If |expandtab| option is used, then all '\t' characters are replaced
-   with spaces, otherwise spaces in begining of the line are replaced by '\t'
+1. Remove control characters
+1. Remove trailing spaces
+1. If `|expandtab|` is set, replace tabs with spaces, if not, replace spaces at
+the beginning of a line with tabs
 
+##### Ignore file types
 
-In order to configure file types to be ingored by a plugin, add the
-following line to your `.vimrc` file:
+By default, **filestyle** checks all file types. To ignore a file type, for
+example `text`, add the following line to your `.vimrc`:
 
     let g:filestyle_ignore = ['text']
 
-
 Contribution
------------------
+------------
 
-Plugin source is available on GitHub by the link:
+Source code and issues of the plugin are hosted on GitHub:
 
     https://github.com/aserebryakov/filestyle
-
-If you want to improve this plugin, just fork the repository.
 
