@@ -1,33 +1,31 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=5065
 
-Usage
------
 
 **filestyle** automatically checks each opened file.
 
 ##### Commands
 
-  * `FileStyleEnable`     - enable plugin globally
-  * `FileStyleDisable`    - disable plugin globally
-  * `FileStyleActivate`   - enable plugin for current buffer
-  * `FileStyleDeactivate` - disable plugin for current buffer
-  * `FileStyleCheck`      - check current buffer
-  * `FileStyleFix`        - fix style errors
+* `:FileStyleEnable`     - enable plugin globally
+* `:FileStyleDisable`    - disable plugin globally
+* `:FileStyleActivate`   - enable plugin for current buffer
+* `:FileStyleDeactivate` - disable plugin for current buffer
+* `:FileStyleCheck`      - check current buffer
+* `:FileStyleFix`        - fix style errors
 
 ##### Highlighting rules
 
-1. If `|expandtab|` is set, highlight tabs (RED), if not, highlight spaces at
-the beginning of a line (YELLOW).
-1. Highlight trailing spaces (CYAN)
-1. Highlight line parts that exceed `|textwidth|` (INVERT)
-1. Highlight control characters (BLUE)
+1. If `'expandtab'` is set, highlight tabs (RED), if not, highlight spaces at
+   the beginning of a line (YELLOW).
+2. Highlight trailing spaces (CYAN)
+3. Highlight line parts that exceed `'textwidth'` (INVERT)
+4. Highlight control characters (BLUE)
 
 ##### FileStyleFix rules
 
 1. Remove control characters
-1. Remove trailing spaces
-1. If `|expandtab|` is set, replace tabs with spaces, if not, replace spaces at
-the beginning of a line with tabs
+2. Remove trailing spaces
+3. If `'expandtab'` is set, replace tabs with spaces, if not, replace spaces
+   at the beginning of a line with tabs
 
 ##### Ignore file types
 
@@ -36,10 +34,36 @@ example `text`, add the following line to your `.vimrc`:
 
     let g:filestyle_ignore = ['text']
 
+##### Ignore patterns
+
+**filestyle** allows you to specify patterns that should be ignored. To ignore
+a pattern, for example quoted lines starting with `>`, add the following line
+to your `.vimrc`:
+
+    let g:filestyle_ignore_patterns = ['^\(> \?\)\+$']
+
+##### Known issues
+
+**filestyle** cannot detect `'textwidth'` changes. If you change `'textwidth'`,
+execute `:FileStyleCheck` to ensure the new width is used for highlighting long
+lines.
+
 Contribution
 ------------
 
-Source code and issues of the plugin are hosted on GitHub:
+Source code and issues are hosted on GitHub:
 
     https://github.com/aserebryakov/filestyle
+
+License
+-------
+
+[Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+
+Credits
+-------
+
+* Alexander Serebryakov, original author ([GitHub](https://github.com/aserebryakov))
+* Markus Weimar ([GitHub](https://github.com/Markus00000))
 

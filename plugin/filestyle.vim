@@ -14,13 +14,53 @@
 
 "Plugin checking the file to follow Your Vim settings
 
+
+"Create ignored pattern highlight group
+function! FileStyleCreateIgnoredPatternGroup()
+  let l:colors = ''
+
+  redir => l:colors
+  silent highlight
+  redir END
+
+  let l:normal_start = match(l:colors, 'Normal\s\+xxx')
+
+  "Normal highlight group should be defined explicitly
+  if (l:normal_start == -1)
+    echom 'FileStyle: Normal highlight group is not found'
+    return
+  endif
+
+  let l:normal_end = match(l:colors, '\n', l:normal_start)
+  let l:normal_group = l:colors[(l:normal_start):(l:normal_end)]
+
+  if (match(l:normal_group, 'ctermbg=') == -1)
+    echom 'FileStyle: ctermbg parameter should be defined explicitly'
+    return
+  endif
+
+  let l:ignored_group = substitute(l:normal_group,
+                                 \ 'Normal\s\+xxx',
+                                 \ 'highlight FileStyleIgnoredPattern',
+                                 \ '')
+  execute l:ignored_group
+endfunction!
+
+
 "Create highlight groups
 function! FileStyleCreateHighlightGroups()
-  highligh FileStyleTabsError ctermbg=Red guibg=Red
-  highligh FileStyleTrailngSpacesError ctermbg=Cyan guibg=Cyan
-  highligh FileStyleSpacesError ctermbg=Yellow guibg=Yellow
-  highligh FileStyleControlCharacter ctermbg=Blue guibg=Blue
-  highligh FileStyleTooLongLine cterm=inverse gui=inverse
+  highlight FileStyleTabsError ctermbg=Red guibg=Red
+  highlight FileStyleTrailingSpacesError ctermbg=Cyan guibg=Cyan
+  highlight FileStyleSpacesError ctermbg=Yellow guibg=Yellow
+  highlight FileStyleControlCharacter ctermbg=Blue guibg=Blue
+  highlight FileStyleTooLongLine cterm=inverse gui=inverse
+
+  if has('gui_running')
+    highlight FileStyleIgnoredPattern guibg=bg gui=NONE
+  else
+    call FileStyleCreateIgnoredPatternGroup()
+  endif
+
 endfunction!
 
 
@@ -62,7 +102,15 @@ endfunction!
 
 "Highlighting specified pattern
 function! FileStyleHighlightPattern(highlight)
-  call matchadd(a:highlight['highlight'], a:highlight['pattern'])
+  if has_key(a:highlight, 'priority')
+      let l:priority = a:highlight['priority']
+  else
+      let l:priority = g:filestyle_default_match_priority
+  endif
+
+  call matchadd(a:highlight['highlight'],
+              \ a:highlight['pattern'],
+              \ l:priority)
 endfunction!
 
 
@@ -81,7 +129,7 @@ endfunction!
 
 "Checking trailing spaces
 function! FileStyleTrailingSpaces()
-    let l:highlight = {'highlight' : 'FileStyleTrailngSpacesError',
+    let l:highlight = {'highlight' : 'FileStyleTrailingSpacesError',
                      \ 'pattern': '\s\+$'}
   call FileStyleHighlightPattern(l:highlight)
 endfunction!
@@ -105,6 +153,81 @@ function! FileStyleControlCharacters()
 endfunction!
 
 
+"Clearing ignored patterns
+function! FileStyleClearIgnoredPatters()
+  if exists('g:filestyle_ignore_patterns')
+      for pattern in g:filestyle_ignore_patterns
+          let l:highlight = {'highlight' : 'FileStyleIgnoredPattern',
+                           \ 'pattern': pattern,
+                           \ 'priority': 10}
+          call FileStyleHighlightPattern(l:highlight)
+      endfor
+  endif
+endfunction!
+
+
+"Sets the trailing spaces to be ignored in InsertMode
+function! FileStyleInsertModeEnter()
+
+  "Autocommands handling cursor moving
+  augroup filestyle_auto_commands_insert_mode
+    autocmd!
+    autocmd CursorMovedI * call FileStyleIgnoreTrailingSpaces()
+  augroup end
+
+  call FileStyleIgnoreTrailingSpacesInCurrentLine()
+endfunction!
+
+
+"Sets the trailing spaces not to be ignored
+function! FileStyleInsertModeLeave()
+
+  "Clean autocommands before leaving InsertMode
+  augroup filestyle_auto_commands_insert_mode
+    autocmd!
+  augroup end
+
+  "Cleaning up variables
+  call FileStyleNotIgnoreTrailingSpaces()
+  unlet g:filestyle_current_line
+  unlet g:filestyle_current_line_match
+
+endfunction!
+
+
+"Sets the trailing spaces to be ignored in a current line
+function! FileStyleIgnoreTrailingSpacesInCurrentLine()
+    let g:filestyle_current_line = line('.')
+    let g:filestyle_current_line_match =  matchadd(
+        \ 'FileStyleIgnoredPattern',
+        \ '\%' . g:filestyle_current_line . 'l\s\+$',
+        \ 10)
+endfunction!
+
+
+"Removes ignoring trailing spaces from matches list
+function! FileStyleNotIgnoreTrailingSpaces()
+  if exists('g:filestyle_current_line_match')
+    call matchdelete(g:filestyle_current_line_match)
+  endif
+endfunction!
+
+
+"Sets trailing spaces to be ignored
+function! FileStyleIgnoreTrailingSpaces()
+  if exists('g:filestyle_current_line')
+    if(g:filestyle_current_line != line('.'))
+      call FileStyleNotIgnoreTrailingSpaces()
+      call FileStyleIgnoreTrailingSpacesInCurrentLine()
+    else
+      return
+    endif
+  else
+      call FileStyleIgnoreTrailingSpacesInCurrentLine()
+  endif
+endfunction!
+
+
 "Checking file dependenly on settings
 function! FileStyleCheck()
   if get(g:, 'filestyle_enabled', 0) == 0
@@ -116,10 +239,11 @@ function! FileStyleCheck()
   endif
 
   call clearmatches()
-  call FileStyleExpandtabCheck()
   call FileStyleTrailingSpaces()
-  call FileStyleLongLines()
+  call FileStyleExpandtabCheck()
   call FileStyleControlCharacters()
+  call FileStyleLongLines()
+  call FileStyleClearIgnoredPatters()
 endfunction!
 
 
@@ -206,10 +330,11 @@ function! FileStyleDisable()
 endfunction!
 
 
-" Plugin startup code
+"Plugin startup code
 if !exists('g:filestyle_plugin')
   let g:filestyle_plugin = 1
   let g:filestyle_enabled = 1
+  let g:filestyle_default_match_priority = 1
   let g:filestyle_ignore_default = ['help', 'nerdtree']
 
   if !exists('g:filestyle_ignore')
@@ -226,6 +351,8 @@ if !exists('g:filestyle_plugin')
     autocmd BufReadPost,VimEnter,FileType * call FileStyleActivate()
     autocmd WinEnter * call FileStyleCheck()
     autocmd ColorScheme * call FileStyleCreateHighlightGroups()
+    autocmd InsertEnter * call FileStyleInsertModeEnter()
+    autocmd InsertLeave * call FileStyleInsertModeLeave()
   augroup end
 
   "Defining plugin commands
